@@ -1,20 +1,63 @@
-<!doctype html>
-
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <title>Entering ~GangBeasts~</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="/favicon.ico" sizes="any">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Socket.IO chat</title>
+  <style>
+      body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+      #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
+      #moniker { border: none; padding: 0 1rem; flex-grow: .1; border-radius: 2rem; margin: 0.25rem; }
+      #moniker:focus { outline: none; }
+      #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
+      #input:focus { outline: none; }
+      #send { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages > li { padding: 0.5rem 1rem; }
+      #messages > li:nth-child(odd) { background: #efefef; }
+  </style>
 </head>
-
 <body>
+  <ul id="messages"></ul>
+  <form id="form" action="">
+    <input id="moniker" autocomplete="off" placeholder="Moniker..." />
+    <input id="input" autocomplete="off" placeholder="Message..." />
+    <button id="send"><b>SEND</b></button>
+  </form>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let counter = 0;
 
-  <!-- Add your site or application content here -->
-  <p>Hello world! This is HTML5 Boilerplate.</p>
-  <script src="js/app.js"></script>
+    const socket = io({
+      auth: {
+        serverOffset: 0
+      },
+      ackTimeout: 10000,
+      retries: 3,
+    });
 
+    const form = document.getElementById('form');
+    const moniker = document.getElementById('moniker');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (input.value) {
+        const clientOffset = `${socket.id}-${counter++}`;
+        socket.emit('chat message', input.value, clientOffset, moniker.value);
+        input.value = '';
+      }
+    });
+
+    socket.on('chat message', (msg, serverOffset, mnk) => {
+      const item = document.createElement('li');
+      item.textContent = mnk + ": " + msg;
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+      socket.auth.serverOffset = serverOffset;
+    });
+  </script>
 </body>
-
 </html>
